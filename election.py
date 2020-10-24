@@ -31,6 +31,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "office",
+    nargs="?",
+    metavar="office", 
+    choices=offices.OFFICES.keys(),
+    help="the office to run an election for. List offices with --list-offices."
+)
+
+parser.add_argument(
     "--list-offices",
     action="store_true",
     help="Lists the offices available to run an election for and quits."
@@ -46,6 +54,7 @@ parser.add_argument(
     "--seed",
     action="store",
     default=None,
+    type=int,
     help="Optional seed to use for the PRNG in case of a tie. If omitted, the seed will be selected based on system time."
 )
 
@@ -71,20 +80,20 @@ print(f"(Using random seed {seed})")
 print()
 print("Reproducibility:")
 print("You should be able to reproduce these election results by running:")
-print(f"    {sys.argv[0]} --seed {seed} {args.file}") 
+print(f"    python {sys.argv[0]} -y --seed {seed} {args.file} {args.office}") 
 print()
 
-office = input("Which office is this election for? ").upper().strip()
-if not office in offices.OFFICES:
-    print(f"FATAL: Office '{office}' not a valid value (use --list-offices to see available options)")
-    sys.exit(1)
-
-seats = offices.OFFICES[office]
-print(f"Running an election for {office}, which has {seats} seat(s) up for election.")
 
 if args.file is None:
     print(f"FATAL: Input file is requried to run election (try {sys.argv[0]} --help)")
     sys.exit(1)
+
+if args.office is None:
+    print(f"FATAL: An office is required to run election (try {sys.argv[0]} --help)")
+    sys.exit(1)
+
+seats = offices.OFFICES[args.office]
+print(f"Running an election for {args.office}, which has {seats} seat(s) up for election.")
 
 def _confirm_yn(prompt: str):
     if args.y:

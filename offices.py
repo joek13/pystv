@@ -4,19 +4,19 @@ Python module listing the elected offices and their number of seats.
 
 # Maps office:str -> seats:int
 OFFICES = {
-    "PRESIDENT": 1, # e.g., President has exactly one seat.
-    "VICE_PRESIDENT": 1,
-    "TREASURER": 1,
-    "MENS_WORKOUT_COORDINATOR": 1,
-    "WOMENS_WORKOUT_COORDINATOR": 1,
-    "SPRINT_COORDINATOR": 1,
-    "MEET_COORDINATOR": 2,
-    "MENS_SOCIAL_CHAIR": 1,
-    "WOMENS_SOCIAL_CHAIR": 1,
-    "FUNDRAISING_CHAIR": 1,
-    "WEBMASTER": 1,
-    "MENS_RECRUITMENT_CHAIR": 1,
-    "WOMENS_RECRUITMENT_CHAIR": 1,
-    "SECRETARY": 1,
-    "TEAM_RELATIONS_CHAIR": 1
+    "president": 1, # e.g., president has exactly one seat.
+    "vice_president": 1,
+    "treasurer": 1,
+    "mens_workout_coordinator": 1,
+    "womens_workout_coordinator": 1,
+    "sprint_coordinator": 1,
+    "meet_coordinator": 2,
+    "mens_social_chair": 1,
+    "womens_social_chair": 1,
+    "fundraising_chair": 1,
+    "webmaster": 1,
+    "mens_recruitment_chair": 1,
+    "womens_recruitment_chair": 1,
+    "secretary": 1,
+    "team_relations_chair": 1
 }
