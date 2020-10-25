@@ -64,6 +64,16 @@ parser.add_argument(
     help="Pauses the ballot counting in between rounds."
 )
 
+parser.add_argument(
+    "--elim",
+    action="store",
+    nargs="+",
+    metavar="candidate",
+    default=None,
+    type=int,
+    help="The identifiers of the candidates, if any, that should be eliminated preemptively."
+)
+
 args = parser.parse_args()
 
 print(f"pystv v{VERSION_STRING}")
@@ -83,11 +93,6 @@ if seed is None:
 
 rng = random.Random(seed)
 print(f"(Using random seed {seed})")
-print()
-print("Reproducibility:")
-print("You should be able to reproduce these election results by running:")
-print(f"    python {sys.argv[0]} -y --seed {seed} {args.file} {args.office}") 
-print()
 
 
 if args.file is None:
@@ -179,9 +184,36 @@ with open(args.file, "r") as csvfile:
         print("Exiting...")
         sys.exit(1)
 
+to_eliminate = args.elim if args.elim is not None else []
+
+if args.elim is None:
+    eliminate = _confirm_yn("Do any candidates need to be eliminated?")
+    if eliminate:
+        candidate_indices = input("Enter their numbers: ")
+        candidate_indices = [x.strip() for x in candidate_indices.split(",")]
+        for candidate_index in candidate_indices:
+            candidate_index = int(candidate_index) - 1
+            to_eliminate.append(candidate_index)
+        print("Candidates to be eliminated:")
+        for i in to_eliminate:
+            print(f"    - {candidates[i]}")
+        confirm_elim = _confirm_yn("Is this correct?")
+        if not confirm_elim:
+            print("Exiting...")
+            sys.exit(1)
+else:
+    to_eliminate = [x - 1 for x in args.elim] # 1-indexed
+    print("Candidates to be eliminated:")
+    for i in to_eliminate:
+        print(f"    - {candidates[i]}")
+    confirm_elim = _confirm_yn("Is this correct?")
+    if not confirm_elim:
+        print("Exiting...")
+        sys.exit(1)
+
 print("Beginning ballot counting process...")
 print()
-remaining_candidates = list(range(len(candidates))) # if we have 3 candidates, this will be [0,1,2], corresponding to each candidate remaining.
+remaining_candidates = set(range(len(candidates))) - set(to_eliminate) # if we have 3 candidates, this will be [0,1,2], corresponding to each candidate remaining.
 count_round = 1
 while len(remaining_candidates) > seats:
     print(f"Begin counting votes for round {count_round}...")
@@ -231,3 +263,12 @@ print("Done counting!")
 print(f"There are {len(remaining_candidates)} winners. They are:")
 for candidate_id in remaining_candidates:
     print(f"  ", candidates[candidate_id])
+
+print()
+print("Reproducibility:")
+print("You should be able to reproduce these election results by running:")
+
+to_eliminate_disp = [str(x + 1) for x in to_eliminate] # make to_eliminate 1-indexed
+
+print(f"    python {sys.argv[0]} -y --seed {seed} {args.file} {args.office} --elim {' '.join(to_eliminate_disp)}") 
+print()
