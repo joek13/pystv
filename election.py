@@ -58,6 +58,12 @@ parser.add_argument(
     help="Optional seed to use for the PRNG in case of a tie. If omitted, the seed will be selected based on system time."
 )
 
+parser.add_argument(
+    "--pause",
+    action="store_true",
+    help="Pauses the ballot counting in between rounds."
+)
+
 args = parser.parse_args()
 
 print(f"pystv v{VERSION_STRING}")
@@ -216,6 +222,8 @@ while len(remaining_candidates) > seats:
     print("Removing them, and recounting votes...")
     remaining_candidates.remove(eliminate)
     count_round += 1
+    if args.pause:
+        input("Press enter to continue.")
     print()
 
 print()
