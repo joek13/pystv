@@ -16,13 +16,14 @@ from decimal import *
 
 getcontext().prec = 5 # 5 digits of decimal precision
 
-VERSION_STRING = "0.1"
+VERSION_STRING = "0.1" # Version string.
 
 parser = argparse.ArgumentParser(
     description=f"pystv v{VERSION_STRING} - ballot counter for Club Running's Fall 2020 Elections",
     epilog="Skyler Moon is a thoughtful guy."
 )
 
+# argument for the csv file we'll read in containing all of the votes
 parser.add_argument(
     "file",
     metavar="input_file",
@@ -30,6 +31,7 @@ parser.add_argument(
     help="Google Form election results data to count, stored as a csv."
 )
 
+# argument for the office we're running this election on
 parser.add_argument(
     "office",
     nargs="?",
@@ -38,18 +40,21 @@ parser.add_argument(
     help="the office to run an election for. List offices with --list-offices."
 )
 
+# flag indicating we should list offices and exit
 parser.add_argument(
     "--list-offices",
     action="store_true",
     help="Lists the offices available to run an election for and quits."
 )
 
+# flag indicating we should skip all confirm y/n prompts
 parser.add_argument(
     "-y",
     action="store_true",
     help="Answers 'yes' to all of the confirmation questions automatically. Only use this if you're really confident!"
 )
 
+# argument allowing user to set the random seed the program should use
 parser.add_argument(
     "--seed",
     action="store",
@@ -58,12 +63,14 @@ parser.add_argument(
     help="Optional seed to use for the PRNG in case of a tie. If omitted, the seed will be selected based on system time."
 )
 
+# argument that makes us pause ballot counting between rounds
 parser.add_argument(
     "--pause",
     action="store_true",
     help="Pauses the ballot counting in between rounds."
 )
 
+# allows preemptive elimination for candidates that are out of the race
 parser.add_argument(
     "--elim",
     action="store",
@@ -86,12 +93,12 @@ if args.list_offices:
     for office in offices.OFFICES.keys():
         print(f"    {office}")
     sys.exit(0)
- 
+
 seed = args.seed
 if seed is None:
-    seed = random.randrange(sys.maxsize)
+    seed = random.randrange(sys.maxsize) # if the user hasn't specified a seed, just come up with one randomly
 
-rng = random.Random(seed)
+rng = random.Random(seed) # initialize an rng using this seed
 print(f"(Using random seed {seed})")
 
 
@@ -107,6 +114,10 @@ seats = offices.OFFICES[args.office]
 print(f"Running an election for {args.office}, which has {seats} seat(s) up for election.")
 
 def _confirm_yn(prompt: str):
+    """
+    Helper function for confirm y/n-style prompts.
+    Will automatically approve if args.y is set.
+    """
     if args.y:
         return True
     else:
@@ -115,19 +126,19 @@ def _confirm_yn(prompt: str):
 CANDIDATE_REGEX = re.compile(r"^.+\[(.+)\]$") # Matches the response part of Google Forms header "Question [Response]"
 ORDINAL_REGEX = re.compile(r"^(\d)+(?:st|nd|rd|th) choice$") # Matches the numeric parts of the ordinal "1st choice", "2nd choice," etc.
 
-print("Reading election data...")
+print("Reading election data...") 
 ballots = []
 with open(args.file, "r") as csvfile:
     reader = csv.reader(csvfile)
     # Extract candidate names by looking at the column headers.
     headers = next(reader)
     # 0 - timestamp
-    # 1 - On Your Honor... 4th Year Question
+    # 1 - On Your Honor... "4th Year Question"
     # 2 to n - "Rank your choices" [Candidate Name]
     candidates = []
     print("Detecting candidates...")
-    for i, col in enumerate(headers[2:]):
-        match = CANDIDATE_REGEX.findall(col)
+    for i, col in enumerate(headers[2:]): # skip first two cols
+        match = CANDIDATE_REGEX.findall(col) # find matches for this column w the candidate regex
         if len(match) == 0:
             print(f"FATAL: Failed to extract candidate from header for column {i + 2}.")
             sys.exit(1)
@@ -158,8 +169,9 @@ with open(args.file, "r") as csvfile:
             print(f"FATAL: found invalid response to 'Are you graduating?' question. Expected something starting with 'Yes' or 'No', but got '{is_graduating}' (row {i})")
             sys.exit(1)
 
-        ballot_choices = []
+        ballot_choices = [] # populate their ballot ranking
         for candidate_index, candidate_response in enumerate(row[2:]):
+            # if they specified no preference, then it's no big deal
             if candidate_response.lower() == config.NO_PREFERENCE_RESPONSE.lower():
                 continue # skip ranking this candidate
 
@@ -168,16 +180,22 @@ with open(args.file, "r") as csvfile:
                 print(f"FATAL: expected response like 'nth choice' but found '{candidate_response}' (row {i})")
             else:
                 rank = int(match[0]) # convert their rank to a number
-                ballot_choices.append((candidate_index, int(rank)))
+                ballot_choices.append((candidate_index, int(rank))) # append like (candidate_id, ranking)
         
-        # sort ballot choices in ascending order
+        # sort ballot choices in ascending order by rank
         ballot_choices.sort(key = lambda x: x[1]) # sort by second entry in tuple - their rank
+
+        # TODO: Python sort is stable, so if two candidates A and B are ranked equally, they will always
+        # end up receiving votes preferring whoever is listed first on the ballot. 
+        # Of course, having two candidates ranked "2" is an invalid way to fill out the ballot.
+        # But we should prepare for this. Probably should consistently shuffle equally-ranked candidates.
+
         # we can now strip out the actual ranks, the ordering is all that matters
         ballot_choices = [x[0] for x in ballot_choices] # just get a list of candidate indices
 
-        new_ballot = ballot.Ballot(timestamp, weight, ballot_choices)
+        new_ballot = ballot.Ballot(timestamp, weight, ballot_choices) # initialize our ballot object
 
-        ballots.append(new_ballot)
+        ballots.append(new_ballot) # add ballot to list
     print(f"Created {len(ballots)} ballots.")
     confirm = _confirm_yn("Does this seem alright?")
     if not confirm:
@@ -186,6 +204,11 @@ with open(args.file, "r") as csvfile:
 
 to_eliminate = args.elim if args.elim is not None else []
 
+# check if any candidates need to be preemptively eliminated.
+# context: in Club Running electoral process, the races happen in
+# a defined order. If someone is running in two races,
+# and they win the earlier race, they are automatically
+# withdrawn from subsequent races. 
 if args.elim is None:
     eliminate = _confirm_yn("Do any candidates need to be eliminated?")
     if eliminate:
@@ -260,7 +283,7 @@ while len(remaining_candidates) > seats:
 
 print()
 print("Done counting!")
-print(f"There are {len(remaining_candidates)} winners. They are:")
+print(f"There are {len(remaining_candidates)} winner(s). They are:")
 for candidate_id in remaining_candidates:
     print(f"  ", candidates[candidate_id])
 
