@@ -110,8 +110,12 @@ if args.office is None:
     print(f"FATAL: An office is required to run election (try {sys.argv[0]} --help)")
     sys.exit(1)
 
-seats = offices.OFFICES[args.office]
-print(f"Running an election for {args.office}, which has {seats} seat(s) up for election.")
+seats = int(offices.OFFICES[args.office]["num_seats"])
+assert isinstance(seats, int)
+graduating_vote_weight = offices.OFFICES[args.office]["graduating_vote_weight"]
+assert isinstance(graduating_vote_weight, Decimal)
+
+print(f"Running an election for {args.office}, which has {seats} seat(s) up for election. Graduating members get {graduating_vote_weight} vote for this position.")
 
 def _confirm_yn(prompt: str):
     """
@@ -162,7 +166,7 @@ with open(args.file, "r") as csvfile:
         is_graduating = row[1] # extract answer to "are you graduating?" question
         if is_graduating.startswith("Yes"):
             # Yes, they are fourth years
-            weight = config.GRADUATING_VOTE_WEIGHT
+            weight = Decimal(graduating_vote_weight)
         elif is_graduating.startswith("No"):
             weight = Decimal("1.0")
         else:

@@ -2,21 +2,68 @@
 Python module listing the elected offices and their number of seats.
 """
 
+from decimal import Decimal
+
 # Maps office:str -> seats:int
 OFFICES = {
-    "president": 1, # e.g., president has exactly one seat.
-    "vice_president": 1,
-    "treasurer": 1,
-    "mens_workout_coordinator": 1,
-    "womens_workout_coordinator": 1,
-    "sprint_coordinator": 1,
-    "meet_coordinator": 2,
-    "mens_social_chair": 1,
-    "womens_social_chair": 1,
-    "fundraising_chair": 1,
-    "webmaster": 1,
-    "mens_recruitment_chair": 1,
-    "womens_recruitment_chair": 1,
-    "secretary": 1,
-    "team_relations_chair": 1
+    "president": {
+        "num_seats": 1, # how many seats to fill for this office?
+        "graduating_vote_weight": Decimal("1") # how are graduating votes weighted for this office?
+    },
+    "vice_president": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("1") 
+    },
+    "treasurer": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("1") 
+    },
+    "mens_workout_coordinator": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("1") 
+    },
+    "womens_workout_coordinator": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("1") 
+    },
+    "sprint_coordinator": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("1") 
+    },
+    "meet_coordinator": {
+        "num_seats": 2,
+        "graduating_vote_weight": Decimal("1") 
+    },
+    "mens_social_chair": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("1") 
+    },
+    "womens_social_chair": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("1") 
+    },
+    "fundraising_chair": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("0.5") # NB: as of fall 2020, any position that first-years are permitted to run for also have half-votes for graduating members
+    },
+    "webmaster": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("0.5") 
+    },
+    "mens_recruitment_chair": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("0.5") 
+    },
+    "womens_recruitment_chair": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("0.5") 
+    },
+    "secretary": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("0.5") 
+    },
+    "team_relations_chair": {
+        "num_seats": 1, 
+        "graduating_vote_weight": Decimal("0.5") 
+    }
 }
