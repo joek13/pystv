@@ -117,13 +117,15 @@ assert isinstance(graduating_vote_weight, Decimal)
 
 print(f"Running an election for {args.office}, which has {seats} seat(s) up for election. Graduating members get {graduating_vote_weight} vote for this position.")
 
-def _confirm_yn(prompt: str):
+def _confirm_yn(prompt: str, invert_flag: bool = False):
     """
     Helper function for confirm y/n-style prompts.
     Will automatically approve if args.y is set.
+
+    invert_flag : bool := whether to return No when -y is set, instead of yes.
     """
     if args.y:
-        return True
+        return (not invert_flag) # if invert_flag is false, return True. else, return False
     else:
         return input(prompt + " [y/n] ") == "y"
 
@@ -214,7 +216,7 @@ to_eliminate = args.elim if args.elim is not None else []
 # and they win the earlier race, they are automatically
 # withdrawn from subsequent races. 
 if args.elim is None:
-    eliminate = _confirm_yn("Do any candidates need to be eliminated?")
+    eliminate = _confirm_yn("Do any candidates need to be eliminated?", invert_flag=True)
     if eliminate:
         candidate_indices = input("Enter their numbers: ")
         candidate_indices = [x.strip() for x in candidate_indices.split(",")]
@@ -290,12 +292,15 @@ print("Done counting!")
 print(f"There are {len(remaining_candidates)} winner(s). They are:")
 for candidate_id in remaining_candidates:
     print(f"  ", candidates[candidate_id])
+    
+print(f"Congratulations to our new {args.office}(s)!")
 
 print()
 print("Reproducibility:")
 print("You should be able to reproduce these election results by running:")
 
 to_eliminate_disp = [str(x + 1) for x in to_eliminate] # make to_eliminate 1-indexed
+elim_disp = f"--elim {' '.join(to_eliminate_disp)}" if len(to_eliminate) > 0 else ""
 
-print(f"    python {sys.argv[0]} -y --seed {seed} {args.file} {args.office} --elim {' '.join(to_eliminate_disp)}") 
+print(f"    python {sys.argv[0]} -y --seed {seed} {args.file} {args.office} {elim_disp}") 
 print()
