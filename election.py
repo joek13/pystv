@@ -215,7 +215,7 @@ with open(args.file, "r") as csvfile:
     if empty_ballots > 0:
         print(f"WARNING: Detected {empty_ballots} empty ballots.")
         confirm = _confirm_yn("Does this seem alright?")
-        if not confim:
+        if not confirm:
             print("Exiting...")
             sys.exit(1)
 
