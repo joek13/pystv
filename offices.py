@@ -8,39 +8,39 @@ from decimal import Decimal
 OFFICES = {
     "president": {
         "num_seats": 1, # how many seats to fill for this office?
-        "graduating_vote_weight": Decimal("1") # how are graduating votes weighted for this office?
+        "graduating_vote_weight": Decimal("1.0") # how are graduating votes weighted for this office?
     },
     "vice_president": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("1") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "treasurer": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("1") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "mens_workout_coordinator": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("1") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "womens_workout_coordinator": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("1") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "sprint_coordinator": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("1") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "meet_coordinator": {
         "num_seats": 2,
-        "graduating_vote_weight": Decimal("1") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "mens_social_chair": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("1") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "womens_social_chair": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("1") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "fundraising_chair": {
         "num_seats": 1, 
