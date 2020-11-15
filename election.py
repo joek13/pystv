@@ -81,6 +81,13 @@ parser.add_argument(
     help="The identifiers of the candidates, if any, that should be eliminated preemptively."
 )
 
+# is it permissible for a tie in the final round to be broken by chance? default: No.
+parser.add_argument(
+    "--break-ties",
+    action="store_true",
+    help="Allows for final-round ties to be settled using random chance."
+)
+
 args = parser.parse_args()
 
 print(f"pystv v{VERSION_STRING}")
@@ -259,7 +266,7 @@ while len(remaining_candidates) > seats:
     print(f"Begin counting votes for round {count_round}...")
     # While there is still competition,
     # ...count the votes.
-    votes = { x: Decimal("0") for x in remaining_candidates } # dict comprehension to create a dict of the form { candidate_id : num votes }
+    votes = { x: Decimal("0.0") for x in remaining_candidates } # dict comprehension to create a dict of the form { candidate_id : num votes }
     for ballot in ballots:
         # Get the highest-ranked still-remaining candidate.
         for candidate in ballot.rankings:
@@ -285,8 +292,26 @@ while len(remaining_candidates) > seats:
     if len(last_place_candidates) > 1:
         # Tie for last!
         print(f"There is a {len(last_place_candidates)}-way tie for last place.")
-        print("We will choose one to eliminate by random chance.")
-        eliminate = rng.choice(last_place_candidates)
+        # if there are more than (num_seats+1) candidates left, just break by chance.
+        # alternatively, always break by chance if user specified.
+        # basically, it's undesirable to have a final round decided by chance.
+        if len(last_place_candidates) > (seats + 1) or args.break_ties:
+            print("We will choose one to eliminate by random chance.")
+            eliminate = rng.choice(last_place_candidates)
+        else:
+            # uh oh!
+            # breaking ties is disabled.
+            # and the last round has a tie.
+            print()
+            print("!!! THE ELECTION ENDED IN A TIE. !!!")
+            print("  (Because --break-ties is not set, there is no way to resolve this tie.)")
+            print("The count stands as follows:")
+            # print the count
+            for i, (candidate_id, nvotes) in enumerate(votes_desc):
+                print(f"  {i+1}. {candidates[candidate_id]} with {nvotes} votes.")
+
+            # no more counting
+            break
     else:
         eliminate = last_place_candidates[0]
 
@@ -300,11 +325,14 @@ while len(remaining_candidates) > seats:
 
 print()
 print("Done counting!")
-print(f"There are {len(remaining_candidates)} winner(s). They are:")
-for candidate_id in remaining_candidates:
-    print(f"  ", candidates[candidate_id])
-    
-print(f"Congratulations to our new {args.office}(s)!")
+
+# only print winners if we didn't end in a tie
+if len(remaining_candidates) <= seats:
+    print(f"There are {len(remaining_candidates)} winner(s). They are:")
+    for candidate_id in remaining_candidates:
+        print(f"  ", candidates[candidate_id])
+        
+    print(f"Congratulations to our new {args.office}(s)!")
 
 print()
 print("Reproducibility:")
@@ -313,5 +341,5 @@ print("You should be able to reproduce these election results by running:")
 to_eliminate_disp = [str(x + 1) for x in to_eliminate] # make to_eliminate 1-indexed
 elim_disp = f"--elim {' '.join(to_eliminate_disp)}" if len(to_eliminate) > 0 else "" # don't show --elim flag if no one was eliminated
 
-print(f"    python {sys.argv[0]} -y --seed {seed} {args.file} {args.office} {elim_disp}") 
+print(f"    python {sys.argv[0]} -y --seed {seed} \"{args.file}\" {args.office} {elim_disp}") 
 print()
