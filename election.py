@@ -51,7 +51,7 @@ parser.add_argument(
 parser.add_argument(
     "-y",
     action="store_true",
-    help="Answers 'yes' to all of the confirmation questions automatically. Only use this if you're really confident!"
+    help="Answers 'yes' to all of the confirmation questions automatically. (Or 'no', when appropriate to make sure no user input is required.) Only use this if you're really confident!"
 )
 
 # argument allowing user to set the random seed the program should use
@@ -183,7 +183,9 @@ with open(args.file, "r") as csvfile:
 
             match = ORDINAL_REGEX.findall(candidate_response)
             if len(match) == 0:
-                print(f"FATAL: expected response like 'nth choice' but found '{candidate_response}' (row {i})")
+                # this candidate was not ranked
+                # (or there was an error in how the form was processed)
+                continue # skip ranking this candidate
             else:
                 rank = int(match[0]) # convert their rank to a number
                 ballot_choices.append((candidate_index, int(rank))) # append like (candidate_id, ranking)
@@ -207,6 +209,15 @@ with open(args.file, "r") as csvfile:
     if not confirm:
         print("Exiting...")
         sys.exit(1)
+
+    # check for empty ballots
+    empty_ballots = len([x for x in ballots if len(x.rankings) == 0])
+    if empty_ballots > 0:
+        print(f"WARNING: Detected {empty_ballots} empty ballots.")
+        confirm = _confirm_yn("Does this seem alright?")
+        if not confim:
+            print("Exiting...")
+            sys.exit(1)
 
 to_eliminate = args.elim if args.elim is not None else []
 
@@ -300,7 +311,7 @@ print("Reproducibility:")
 print("You should be able to reproduce these election results by running:")
 
 to_eliminate_disp = [str(x + 1) for x in to_eliminate] # make to_eliminate 1-indexed
-elim_disp = f"--elim {' '.join(to_eliminate_disp)}" if len(to_eliminate) > 0 else ""
+elim_disp = f"--elim {' '.join(to_eliminate_disp)}" if len(to_eliminate) > 0 else "" # don't show --elim flag if no one was eliminated
 
 print(f"    python {sys.argv[0]} -y --seed {seed} {args.file} {args.office} {elim_disp}") 
 print()
