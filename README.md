@@ -14,3 +14,4 @@ To run an election for the office of meet coordinator, run the following command
 ```
 $ python election.py ./responses.csv meet_coordinator
 ```
+### The algorithm
