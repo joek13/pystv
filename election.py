@@ -201,10 +201,33 @@ with open(args.file, "r") as csvfile:
         # sort ballot choices in ascending order by rank
         ballot_choices.sort(key = lambda x: x[1]) # sort by second entry in tuple - their rank
 
-        # TODO: Python sort is stable, so if two candidates A and B are ranked equally, they will always
+        # toDONE: Python sort is stable, so if two candidates A and B are ranked equally, they will always
         # end up receiving votes preferring whoever is listed first on the ballot. 
         # Of course, having two candidates ranked "2" is an invalid way to fill out the ballot.
         # But we should prepare for this. Probably should consistently shuffle equally-ranked candidates.
+
+        # Update: it is possible to limit "one response per column" on Google Forms. This will avoid the
+        # issue entirely, as these kinds of invalid ballots are impossible to submit.
+        # I am leaving the above comment for posterity in case that option is not selected.
+
+        # NB: Let's talk about "funky ballots." There are a few ways we might fill out a ballot to make it
+        # "funky:"
+        # - Leave it empty (rank no candidates)
+        # - Fill it out partially (rank some subset of the candidates)
+        # - Fill it out discontinuously (rank candidates 1,2,4 instead of 1,2,3, or any variation_)
+        # - Fill it out partiall and discontinuously
+        # The code should be able to handle all of these.
+
+        # Empty ballots will never count towards anyone's vote total. There is, however, a warning
+        # that tells you *how* many empty ballots there are, because many empty ballots could
+        # potentially mean the form is misconfigured. (Real ballots being mistakenly counted as empty.)
+
+        # Partially ranked ballots are also not an issue for a similar reason. A partially ranked
+        # ballot will only ever count towards one of the candidates that are included in its rank.
+
+        # Discontinuous ballots are also not an issue. We really care about the *order* of preference
+        # rather than the number itself. So, ranking A at 1 and B at 3 is no different than ranking A
+        # at 2 and at 4. Or A - 1 and B - 2. We only care that A comes before B ordinally.
 
         # we can now strip out the actual ranks, the ordering is all that matters
         ballot_choices = [x[0] for x in ballot_choices] # just get a list of candidate indices
