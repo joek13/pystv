@@ -66,6 +66,7 @@ parser.add_argument(
 # argument that makes us pause ballot counting between rounds
 parser.add_argument(
     "--pause",
+    "--ryan-mode", # Ryan Torbic suggested that the code was too fast and therefore unlike other ballot counting. This option enhances the realism significantly, and makes you really feel like you are in the great state of Nevada.
     action="store_true",
     help="Pauses the ballot counting in between rounds."
 )
