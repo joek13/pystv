@@ -89,6 +89,15 @@ parser.add_argument(
     help="Allows for final-round ties to be settled using random chance."
 )
 
+parser.add_argument(
+    "--exec-votes",
+    action="store",
+    metavar="exec-input-file",
+    default=None,
+    type=str,
+    help="Path to file containing exec votes. When specified, exec's votes will repreesnt 50% of the votes."
+)
+
 args = parser.parse_args()
 
 print(f"pystv v{VERSION_STRING}")
@@ -249,6 +258,101 @@ with open(args.file, "r") as csvfile:
         if not confirm:
             print("Exiting...")
             sys.exit(1)
+
+# "mass" is the sum of the weights of non-empty ballots
+# represents the total voting power of the club, used for computing exec's vote weight
+real_mass = sum([x.weight for x in ballots if len(x.rankings) > 0]) # count of non-empty ballots
+
+print(f"Detected a total club 'voting mass' of {real_mass}")
+
+# should we count special exec supervotes?
+if args.exec_votes != None:
+    print("Reading exec data...")
+    # we need to count exec votes
+    with open(args.exec_votes, "r") as exec_csv:
+        reader = csv.reader(exec_csv)
+        headers = next(reader) # get the headers from the google forms responses
+
+        exec_candidates = []
+        print("Detecting candidates in exec ballot...")
+        for i, col in enumerate(headers[1:]): # skip first col (timestamp)
+            match = CANDIDATE_REGEX.findall(col)
+            if len(match) == 0:
+                print(f"FATAL: Failed to extract candidate from header for column {i + 2}.")
+                sys.exit(1)
+            else:
+                exec_candidates.append(match[0])
+        
+        if exec_candidates != candidates:
+            print("FATAL: Exec file's candidates do not match input file's candidates")
+            sys.exit(1)
+
+        exec_ballots = []
+        for i, row in enumerate(reader):
+            i += 1 # increment i because we skipped the header
+            timestamp = row[0] # extract the ballot timestamp
+
+            ballot_choices = [] # populate their ballot ranking
+            for candidate_index, candidate_response in enumerate(row[1:]):
+                # if they specified no preference, then it's no big deal
+                if candidate_response.lower() == config.NO_PREFERENCE_RESPONSE.lower():
+                    continue # skip ranking this candidate
+
+                match = ORDINAL_REGEX.findall(candidate_response)
+                if len(match) == 0:
+                    # this candidate was not ranked
+                    # (or there was an error in how the form was processed)
+                    continue # skip ranking this candidate
+                else:
+                    rank = int(match[0]) # convert their rank to a number
+                    ballot_choices.append((candidate_index, int(rank))) # append like (candidate_id, ranking)
+
+            # sort ballot choices in ascending order by rank
+            ballot_choices.sort(key = lambda x: x[1]) # sort by second entry in tuple - their rank
+
+            # we can now strip out the actual ranks, the ordering is all that matters
+            ballot_choices = [x[0] for x in ballot_choices] # just get a list of candidate indices
+
+            # NOTE: temporarily setting ballot weight to 0.0, as we need to calculate later
+            new_ballot = ballot.Ballot(timestamp, 0.0, ballot_choices) # initialize our ballot object
+
+            # add to list of exec ballots
+            exec_ballots.append(new_ballot)
+
+        print(f"Created {len(exec_ballots)} exec superballots.")
+        confirm = _confirm_yn("Does this seem alright?")
+        if not confirm:
+            print("Exiting...")
+            sys.exit(1)
+
+        empty_exec_ballots = len([x for x in ballots if len(x.rankings) == 0])
+        if empty_exec_ballots > 0:
+            print(f"WARNING: Detected {empty_exec_ballots} empty exec ballots.")
+            confirm = _confirm_yn("Does this seem alright?")
+            if not confirm:
+                print("Exiting...")
+                sys.exit(1)
+
+        print("Calculating exec vote weight...")
+        # calculate the "boost" exec votes should get
+        # if we have k exec votes and "regular" vote mass of n, then exec gets
+        # a weight of n / k. That way, the total mass of exec votes
+        # is equal to that of the club.
+        exec_votes = Decimal(len(exec_ballots))
+        exec_weight = real_mass / exec_votes
+        print(f"Calculated exec vote weight of {exec_weight}")
+
+        for exec_ballot in exec_ballots:
+            exec_ballot.weight = exec_weight
+        
+        exec_mass = sum([x.weight for x in exec_ballots])
+        print(f"Exec votes have mass of {exec_mass}.")
+        if exec_mass != real_mass:
+            print("FATAL: Exec mass does not match real mass")
+            sys.exit(1)
+
+        # add exec votes to general pool
+        ballots = ballots + exec_ballots
 
 to_eliminate = args.elim if args.elim is not None else []
 
