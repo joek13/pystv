@@ -16,7 +16,7 @@ from decimal import *
 
 getcontext().prec = 5 # 5 digits of decimal precision
 
-VERSION_STRING = "0.5" # Version string.
+VERSION_STRING = "1.0" # Version string.
 
 parser = argparse.ArgumentParser(
     description=f"pystv v{VERSION_STRING} - ballot counter for Club Running's Fall 2020 Elections",
