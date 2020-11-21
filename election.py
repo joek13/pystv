@@ -469,5 +469,7 @@ print("You should be able to reproduce these election results by running:")
 to_eliminate_disp = [str(x + 1) for x in to_eliminate] # make to_eliminate 1-indexed
 elim_disp = f"--elim {' '.join(to_eliminate_disp)}" if len(to_eliminate) > 0 else "" # don't show --elim flag if no one was eliminated
 
-print(f"    python {sys.argv[0]} -y --seed {seed} \"{args.file}\" {args.office} {elim_disp}") 
+exec_disp = f"--exec-votes \"{args.exec_votes}\"" if args.exec_votes != None else ""
+
+print(f"    python {sys.argv[0]} -y --seed {seed} \"{args.file}\" {args.office} {elim_disp} {exec_disp}") 
 print()
