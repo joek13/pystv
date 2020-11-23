@@ -347,9 +347,6 @@ if args.exec_votes != None:
         
         exec_mass = sum([x.weight for x in exec_ballots])
         print(f"Exec votes have mass of {exec_mass}.")
-        if exec_mass != real_mass:
-            print("FATAL: Exec mass does not match real mass")
-            sys.exit(1)
 
         # add exec votes to general pool
         ballots = ballots + exec_ballots
@@ -423,7 +420,7 @@ while len(remaining_candidates) > seats:
         # if there are more than (num_seats+1) candidates left, just break by chance.
         # alternatively, always break by chance if user specified.
         # basically, it's undesirable to have a final round decided by chance.
-        if len(last_place_candidates) > (seats + 1) or args.break_ties:
+        if len(remaining_candidates) > (seats + 1) or args.break_ties:
             print("We will choose one to eliminate by random chance.")
             eliminate = rng.choice(last_place_candidates)
         else:
