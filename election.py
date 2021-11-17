@@ -14,9 +14,9 @@ import re
 import random
 from decimal import *
 
-getcontext().prec = 5 # 5 digits of decimal precision
+getcontext().prec = 5  # 5 digits of decimal precision
 
-VERSION_STRING = "1.0" # Version string.
+VERSION_STRING = "1.1"  # Version string.
 
 parser = argparse.ArgumentParser(
     description=f"pystv v{VERSION_STRING} - ballot counter for Club Running's Fall 2020 Elections",
@@ -35,7 +35,7 @@ parser.add_argument(
 parser.add_argument(
     "office",
     nargs="?",
-    metavar="office", 
+    metavar="office",
     choices=offices.OFFICES.keys(),
     help="the office to run an election for. List offices with --list-offices."
 )
@@ -66,7 +66,8 @@ parser.add_argument(
 # argument that makes us pause ballot counting between rounds
 parser.add_argument(
     "--pause",
-    "--ryan-mode", # Ryan Torbic suggested that the code was too fast and therefore unlike other ballot counting. This option enhances the realism significantly, and makes you really feel like you are in the great state of Nevada.
+    # Ryan Torbic suggested that the code was too fast and therefore unlike other ballot counting. This option enhances the realism significantly, and makes you really feel like you are in the great state of Nevada.
+    "--ryan-mode",
     action="store_true",
     help="Pauses the ballot counting in between rounds."
 )
@@ -95,7 +96,9 @@ parser.add_argument(
     metavar="exec-input-file",
     default=None,
     type=str,
-    help="Path to file containing exec votes. When specified, exec's votes will repreesnt 50% of the votes."
+    # need to escape the % since argparse is formatting our help string >:(
+    # see https://thomas-cokelaer.info/blog/2014/03/python-argparse-issues-with-the-help-argument-typeerror-o-format-a-number-is-required-not-dict/
+    help="Path to file containing exec votes. When specified, exec's votes will represent 50%% of the votes."
 )
 
 args = parser.parse_args()
@@ -113,18 +116,21 @@ if args.list_offices:
 
 seed = args.seed
 if seed is None:
-    seed = random.randrange(sys.maxsize) # if the user hasn't specified a seed, just come up with one randomly
+    # if the user hasn't specified a seed, just come up with one randomly
+    seed = random.randrange(sys.maxsize)
 
-rng = random.Random(seed) # initialize an rng using this seed
+rng = random.Random(seed)  # initialize an rng using this seed
 print(f"(Using random seed {seed})")
 
 
 if args.file is None:
-    print(f"FATAL: Input file is requried to run election (try {sys.argv[0]} --help)")
+    print(
+        f"FATAL: Input file is requried to run election (try {sys.argv[0]} --help)")
     sys.exit(1)
 
 if args.office is None:
-    print(f"FATAL: An office is required to run election (try {sys.argv[0]} --help)")
+    print(
+        f"FATAL: An office is required to run election (try {sys.argv[0]} --help)")
     sys.exit(1)
 
 seats = int(offices.OFFICES[args.office]["num_seats"])
@@ -132,7 +138,9 @@ assert isinstance(seats, int)
 graduating_vote_weight = offices.OFFICES[args.office]["graduating_vote_weight"]
 assert isinstance(graduating_vote_weight, Decimal)
 
-print(f"Running an election for {args.office}, which has {seats} seat(s) up for election. Graduating members get {graduating_vote_weight} vote for this position.")
+print(
+    f"Running an election for {args.office}, which has {seats} seat(s) up for election. Graduating members get {graduating_vote_weight} vote for this position.")
+
 
 def _confirm_yn(prompt: str, invert_flag: bool = False):
     """
@@ -142,14 +150,18 @@ def _confirm_yn(prompt: str, invert_flag: bool = False):
     invert_flag : bool := whether to return No when -y is set, instead of yes.
     """
     if args.y:
-        return (not invert_flag) # if invert_flag is false, return True. else, return False
+        # if invert_flag is false, return True. else, return False
+        return (not invert_flag)
     else:
         return input(prompt + " [y/n] ") == "y"
 
-CANDIDATE_REGEX = re.compile(r"^.+\[(.+)\]$") # Matches the response part of Google Forms header "Question [Response]"
-ORDINAL_REGEX = re.compile(r"^(\d)+(?:st|nd|rd|th) choice$") # Matches the numeric parts of the ordinal "1st choice", "2nd choice," etc.
 
-print("Reading election data...") 
+# Matches the response part of Google Forms header "Question [Response]"
+CANDIDATE_REGEX = re.compile(r"^.+\[(.+)\]$")
+# Matches the numeric parts of the ordinal "1st choice", "2nd choice," etc.
+ORDINAL_REGEX = re.compile(r"^(\d)+(?:st|nd|rd|th) choice$")
+
+print("Reading election data...")
 ballots = []
 with open(args.file, "r") as csvfile:
     reader = csv.reader(csvfile)
@@ -160,16 +172,18 @@ with open(args.file, "r") as csvfile:
     # 2 to n - "Rank your choices" [Candidate Name]
     candidates = []
     print("Detecting candidates...")
-    for i, col in enumerate(headers[2:]): # skip first two cols
-        match = CANDIDATE_REGEX.findall(col) # find matches for this column w the candidate regex
+    for i, col in enumerate(headers[2:]):  # skip first two cols
+        # find matches for this column w the candidate regex
+        match = CANDIDATE_REGEX.findall(col)
         if len(match) == 0:
-            print(f"FATAL: Failed to extract candidate from header for column {i + 2}.")
+            print(
+                f"FATAL: Failed to extract candidate from header for column {i + 2}.")
             sys.exit(1)
         else:
             candidates.append(match[0])
 
     print(f"Detected {len(candidates)} candidates:")
-    for i,candidate in enumerate(candidates):
+    for i, candidate in enumerate(candidates):
         print(f"    {i+1}. ", candidate)
     confirm = _confirm_yn("Is this correct?")
     if not confirm:
@@ -178,40 +192,44 @@ with open(args.file, "r") as csvfile:
 
     print("Initializing ballots...")
     for i, row in enumerate(reader):
-        i += 1 # increment i because we skipped header
-        timestamp = row[0] # extract the ballot timestamp
+        i += 1  # increment i because we skipped header
+        timestamp = row[0]  # extract the ballot timestamp
 
         weight = None
-        is_graduating = row[1] # extract answer to "are you graduating?" question
+        # extract answer to "are you graduating?" question
+        is_graduating = row[1]
         if is_graduating.startswith("Yes"):
             # Yes, they are fourth years
             weight = Decimal(graduating_vote_weight)
         elif is_graduating.startswith("No"):
             weight = Decimal("1.0")
         else:
-            print(f"FATAL: found invalid response to 'Are you graduating?' question. Expected something starting with 'Yes' or 'No', but got '{is_graduating}' (row {i})")
+            print(
+                f"FATAL: found invalid response to 'Are you graduating?' question. Expected something starting with 'Yes' or 'No', but got '{is_graduating}' (row {i})")
             sys.exit(1)
 
-        ballot_choices = [] # populate their ballot ranking
+        ballot_choices = []  # populate their ballot ranking
         for candidate_index, candidate_response in enumerate(row[2:]):
             # if they specified no preference, then it's no big deal
             if candidate_response.lower() == config.NO_PREFERENCE_RESPONSE.lower():
-                continue # skip ranking this candidate
+                continue  # skip ranking this candidate
 
             match = ORDINAL_REGEX.findall(candidate_response)
             if len(match) == 0:
                 # this candidate was not ranked
                 # (or there was an error in how the form was processed)
-                continue # skip ranking this candidate
+                continue  # skip ranking this candidate
             else:
-                rank = int(match[0]) # convert their rank to a number
-                ballot_choices.append((candidate_index, int(rank))) # append like (candidate_id, ranking)
-        
+                rank = int(match[0])  # convert their rank to a number
+                # append like (candidate_id, ranking)
+                ballot_choices.append((candidate_index, int(rank)))
+
         # sort ballot choices in ascending order by rank
-        ballot_choices.sort(key = lambda x: x[1]) # sort by second entry in tuple - their rank
+        # sort by second entry in tuple - their rank
+        ballot_choices.sort(key=lambda x: x[1])
 
         # toDONE: Python sort is stable, so if two candidates A and B are ranked equally, they will always
-        # end up receiving votes preferring whoever is listed first on the ballot. 
+        # end up receiving votes preferring whoever is listed first on the ballot.
         # Of course, having two candidates ranked "2" is an invalid way to fill out the ballot.
         # But we should prepare for this. Probably should consistently shuffle equally-ranked candidates.
 
@@ -239,11 +257,13 @@ with open(args.file, "r") as csvfile:
         # at 2 and at 4. Or A - 1 and B - 2. We only care that A comes before B ordinally.
 
         # we can now strip out the actual ranks, the ordering is all that matters
-        ballot_choices = [x[0] for x in ballot_choices] # just get a list of candidate indices
+        # just get a list of candidate indices
+        ballot_choices = [x[0] for x in ballot_choices]
 
-        new_ballot = ballot.Ballot(timestamp, weight, ballot_choices) # initialize our ballot object
+        # initialize our ballot object
+        new_ballot = ballot.Ballot(timestamp, weight, ballot_choices)
 
-        ballots.append(new_ballot) # add ballot to list
+        ballots.append(new_ballot)  # add ballot to list
     print(f"Created {len(ballots)} ballots.")
     confirm = _confirm_yn("Does this seem alright?")
     if not confirm:
@@ -261,7 +281,8 @@ with open(args.file, "r") as csvfile:
 
 # "mass" is the sum of the weights of non-empty ballots
 # represents the total voting power of the club, used for computing exec's vote weight
-real_mass = sum([x.weight for x in ballots if len(x.rankings) > 0]) # count of non-empty ballots
+# count of non-empty ballots
+real_mass = sum([x.weight for x in ballots if len(x.rankings) > 0])
 
 print(f"Detected a total club 'voting mass' of {real_mass}")
 
@@ -271,50 +292,56 @@ if args.exec_votes != None:
     # we need to count exec votes
     with open(args.exec_votes, "r") as exec_csv:
         reader = csv.reader(exec_csv)
-        headers = next(reader) # get the headers from the google forms responses
+        # get the headers from the google forms responses
+        headers = next(reader)
 
         exec_candidates = []
         print("Detecting candidates in exec ballot...")
-        for i, col in enumerate(headers[1:]): # skip first col (timestamp)
+        for i, col in enumerate(headers[1:]):  # skip first col (timestamp)
             match = CANDIDATE_REGEX.findall(col)
             if len(match) == 0:
-                print(f"FATAL: Failed to extract candidate from header for column {i + 2}.")
+                print(
+                    f"FATAL: Failed to extract candidate from header for column {i + 2}.")
                 sys.exit(1)
             else:
                 exec_candidates.append(match[0])
-        
+
         if exec_candidates != candidates:
             print("FATAL: Exec file's candidates do not match input file's candidates")
             sys.exit(1)
 
         exec_ballots = []
         for i, row in enumerate(reader):
-            i += 1 # increment i because we skipped the header
-            timestamp = row[0] # extract the ballot timestamp
+            i += 1  # increment i because we skipped the header
+            timestamp = row[0]  # extract the ballot timestamp
 
-            ballot_choices = [] # populate their ballot ranking
+            ballot_choices = []  # populate their ballot ranking
             for candidate_index, candidate_response in enumerate(row[1:]):
                 # if they specified no preference, then it's no big deal
                 if candidate_response.lower() == config.NO_PREFERENCE_RESPONSE.lower():
-                    continue # skip ranking this candidate
+                    continue  # skip ranking this candidate
 
                 match = ORDINAL_REGEX.findall(candidate_response)
                 if len(match) == 0:
                     # this candidate was not ranked
                     # (or there was an error in how the form was processed)
-                    continue # skip ranking this candidate
+                    continue  # skip ranking this candidate
                 else:
-                    rank = int(match[0]) # convert their rank to a number
-                    ballot_choices.append((candidate_index, int(rank))) # append like (candidate_id, ranking)
+                    rank = int(match[0])  # convert their rank to a number
+                    # append like (candidate_id, ranking)
+                    ballot_choices.append((candidate_index, int(rank)))
 
             # sort ballot choices in ascending order by rank
-            ballot_choices.sort(key = lambda x: x[1]) # sort by second entry in tuple - their rank
+            # sort by second entry in tuple - their rank
+            ballot_choices.sort(key=lambda x: x[1])
 
             # we can now strip out the actual ranks, the ordering is all that matters
-            ballot_choices = [x[0] for x in ballot_choices] # just get a list of candidate indices
+            # just get a list of candidate indices
+            ballot_choices = [x[0] for x in ballot_choices]
 
             # NOTE: temporarily setting ballot weight to 0.0, as we need to calculate later
-            new_ballot = ballot.Ballot(timestamp, 0.0, ballot_choices) # initialize our ballot object
+            # initialize our ballot object
+            new_ballot = ballot.Ballot(timestamp, 0.0, ballot_choices)
 
             # add to list of exec ballots
             exec_ballots.append(new_ballot)
@@ -327,7 +354,8 @@ if args.exec_votes != None:
 
         empty_exec_ballots = len([x for x in ballots if len(x.rankings) == 0])
         if empty_exec_ballots > 0:
-            print(f"WARNING: Detected {empty_exec_ballots} empty exec ballots.")
+            print(
+                f"WARNING: Detected {empty_exec_ballots} empty exec ballots.")
             confirm = _confirm_yn("Does this seem alright?")
             if not confirm:
                 print("Exiting...")
@@ -344,7 +372,7 @@ if args.exec_votes != None:
 
         for exec_ballot in exec_ballots:
             exec_ballot.weight = exec_weight
-        
+
         exec_mass = sum([x.weight for x in exec_ballots])
         print(f"Exec votes have mass of {exec_mass}.")
 
@@ -357,9 +385,10 @@ to_eliminate = args.elim if args.elim is not None else []
 # context: in Club Running electoral process, the races happen in
 # a defined order. If someone is running in two races,
 # and they win the earlier race, they are automatically
-# withdrawn from subsequent races. 
+# withdrawn from subsequent races.
 if args.elim is None:
-    eliminate = _confirm_yn("Do any candidates need to be eliminated?", invert_flag=True)
+    eliminate = _confirm_yn(
+        "Do any candidates need to be eliminated?", invert_flag=True)
     if eliminate:
         candidate_indices = input("Enter their numbers: ")
         candidate_indices = [x.strip() for x in candidate_indices.split(",")]
@@ -374,7 +403,7 @@ if args.elim is None:
             print("Exiting...")
             sys.exit(1)
 else:
-    to_eliminate = [x - 1 for x in args.elim] # 1-indexed
+    to_eliminate = [x - 1 for x in args.elim]  # 1-indexed
     print("Candidates to be eliminated:")
     for i in to_eliminate:
         print(f"    - {candidates[i]}")
@@ -385,13 +414,15 @@ else:
 
 print("Beginning ballot counting process...")
 print()
-remaining_candidates = set(range(len(candidates))) - set(to_eliminate) # if we have 3 candidates, this will be [0,1,2], corresponding to each candidate remaining.
+# if we have 3 candidates, this will be [0,1,2], corresponding to each candidate remaining.
+remaining_candidates = set(range(len(candidates))) - set(to_eliminate)
 count_round = 1
 while len(remaining_candidates) > seats:
     print(f"Begin counting votes for round {count_round}...")
     # While there is still competition,
     # ...count the votes.
-    votes = { x: Decimal("0.0") for x in remaining_candidates } # dict comprehension to create a dict of the form { candidate_id : num votes }
+    # dict comprehension to create a dict of the form { candidate_id : num votes }
+    votes = {x: Decimal("0.0") for x in remaining_candidates}
     for ballot in ballots:
         # Get the highest-ranked still-remaining candidate.
         for candidate in ballot.rankings:
@@ -400,7 +431,7 @@ while len(remaining_candidates) > seats:
             if candidate in remaining_candidates:
                 # If so, give them a vote.
                 votes[candidate] += ballot.weight
-                break # And stop voting.
+                break  # And stop voting.
     print(f"Done counting votes for round {count_round}.")
     print("Here are the results:")
     votes_desc = sorted(votes.items(), key=lambda pair: pair[1], reverse=True)
@@ -410,13 +441,15 @@ while len(remaining_candidates) > seats:
     # How many votes did the least popular candidate get?
     least_num_votes = votes_desc[-1][1]
     # Let's see how many candidates have this.
-    last_place_candidates = [x for x in remaining_candidates if votes[x] == least_num_votes]
+    last_place_candidates = [
+        x for x in remaining_candidates if votes[x] == least_num_votes]
 
     eliminate = None
-    
+
     if len(last_place_candidates) > 1:
         # Tie for last!
-        print(f"There is a {len(last_place_candidates)}-way tie for last place.")
+        print(
+            f"There is a {len(last_place_candidates)}-way tie for last place.")
         # if there are more than (num_seats+1) candidates left, just break by chance.
         # alternatively, always break by chance if user specified.
         # basically, it's undesirable to have a final round decided by chance.
@@ -429,11 +462,13 @@ while len(remaining_candidates) > seats:
             # and the last round has a tie.
             print()
             print("!!! THE ELECTION ENDED IN A TIE. !!!")
-            print("  (Because --break-ties is not set, there is no way to resolve this tie.)")
+            print(
+                "  (Because --break-ties is not set, there is no way to resolve this tie.)")
             print("The count stands as follows:")
             # print the count
             for i, (candidate_id, nvotes) in enumerate(votes_desc):
-                print(f"  {i+1}. {candidates[candidate_id]} with {nvotes} votes.")
+                print(
+                    f"  {i+1}. {candidates[candidate_id]} with {nvotes} votes.")
 
             # no more counting
             break
@@ -456,17 +491,21 @@ if len(remaining_candidates) <= seats:
     print(f"There are {len(remaining_candidates)} winner(s). They are:")
     for candidate_id in remaining_candidates:
         print(f"  ", candidates[candidate_id])
-        
+
     print(f"Congratulations to our new {args.office}(s)!")
 
 print()
 print("Reproducibility:")
 print("You should be able to reproduce these election results by running:")
 
-to_eliminate_disp = [str(x + 1) for x in to_eliminate] # make to_eliminate 1-indexed
-elim_disp = f"--elim {' '.join(to_eliminate_disp)}" if len(to_eliminate) > 0 else "" # don't show --elim flag if no one was eliminated
+to_eliminate_disp = [str(x + 1)
+                     for x in to_eliminate]  # make to_eliminate 1-indexed
+# don't show --elim flag if no one was eliminated
+elim_disp = f"--elim {' '.join(to_eliminate_disp)}" if len(
+    to_eliminate) > 0 else ""
 
 exec_disp = f"--exec-votes \"{args.exec_votes}\"" if args.exec_votes != None else ""
 
-print(f"    python {sys.argv[0]} -y --seed {seed} \"{args.file}\" {args.office} {elim_disp} {exec_disp}") 
+print(
+    f"    python {sys.argv[0]} -y --seed {seed} \"{args.file}\" {args.office} {elim_disp} {exec_disp}")
 print()
