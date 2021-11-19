@@ -159,7 +159,7 @@ def _confirm_yn(prompt: str, invert_flag: bool = False):
 # Matches the response part of Google Forms header "Question [Response]"
 CANDIDATE_REGEX = re.compile(r"^.+\[(.+)\]$")
 # Matches the numeric parts of the ordinal "1st choice", "2nd choice," etc.
-ORDINAL_REGEX = re.compile(r"^(\d)+(?:st|nd|rd|th) choice$")
+ORDINAL_REGEX = re.compile(r"^(\d+)(?:st|nd|rd|th) choice$")
 
 print("Reading election data...")
 ballots = []
