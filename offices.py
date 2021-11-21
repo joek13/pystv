@@ -44,26 +44,26 @@ OFFICES = {
     },
     "fundraising_chair": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("0.5") # NB: as of fall 2020, any position that first-years are permitted to run for also have half-votes for graduating members
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "webmaster": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("0.5") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "mens_recruitment_chair": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("0.5") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "womens_recruitment_chair": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("0.5") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "secretary": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("0.5") 
+        "graduating_vote_weight": Decimal("1.0") 
     },
     "team_relations_chair": {
         "num_seats": 1, 
-        "graduating_vote_weight": Decimal("0.5") 
+        "graduating_vote_weight": Decimal("1.0") 
     }
 }
