@@ -16,10 +16,10 @@ from decimal import *
 
 getcontext().prec = 5  # 5 digits of decimal precision
 
-VERSION_STRING = "1.1"  # Version string.
+VERSION_STRING = "1.2"  # Version string.
 
 parser = argparse.ArgumentParser(
-    description=f"pystv v{VERSION_STRING} - ballot counter for Club Running's Fall 2020 Elections",
+    description=f"pystv v{VERSION_STRING} - ballot counter for some Club Running elections",
     epilog="Skyler Moon is a thoughtful guy."
 )
 
@@ -135,11 +135,8 @@ if args.office is None:
 
 seats = int(offices.OFFICES[args.office]["num_seats"])
 assert isinstance(seats, int)
-graduating_vote_weight = offices.OFFICES[args.office]["graduating_vote_weight"]
-assert isinstance(graduating_vote_weight, Decimal)
 
-print(
-    f"Running an election for {args.office}, which has {seats} seat(s) up for election. Graduating members get {graduating_vote_weight} vote for this position.")
+print(f"Running an election for {args.office}, which has {seats} seat(s) up for election.")
 
 
 def _confirm_yn(prompt: str, invert_flag: bool = False):
@@ -168,16 +165,15 @@ with open(args.file, "r") as csvfile:
     # Extract candidate names by looking at the column headers.
     headers = next(reader)
     # 0 - timestamp
-    # 1 - On Your Honor... "4th Year Question"
-    # 2 to n - "Rank your choices" [Candidate Name]
+    # 1 to n - "Rank your choices" [Candidate Name]
     candidates = []
     print("Detecting candidates...")
-    for i, col in enumerate(headers[2:]):  # skip first two cols
+    for i, col in enumerate(headers[1:]):  # skip first col
         # find matches for this column w the candidate regex
         match = CANDIDATE_REGEX.findall(col)
         if len(match) == 0:
             print(
-                f"FATAL: Failed to extract candidate from header for column {i + 2}.")
+                f"FATAL: Failed to extract candidate from header for column {i}.")
             sys.exit(1)
         else:
             candidates.append(match[0])
@@ -195,21 +191,10 @@ with open(args.file, "r") as csvfile:
         i += 1  # increment i because we skipped header
         timestamp = row[0]  # extract the ballot timestamp
 
-        weight = None
-        # extract answer to "are you graduating?" question
-        is_graduating = row[1]
-        if is_graduating.startswith("Yes"):
-            # Yes, they are fourth years
-            weight = Decimal(graduating_vote_weight)
-        elif is_graduating.startswith("No"):
-            weight = Decimal("1.0")
-        else:
-            print(
-                f"FATAL: found invalid response to 'Are you graduating?' question. Expected something starting with 'Yes' or 'No', but got '{is_graduating}' (row {i})")
-            sys.exit(1)
+        weight = Decimal("1.0")
 
         ballot_choices = []  # populate their ballot ranking
-        for candidate_index, candidate_response in enumerate(row[2:]):
+        for candidate_index, candidate_response in enumerate(row[1:]):
             # if they specified no preference, then it's no big deal
             if candidate_response.lower() == config.NO_PREFERENCE_RESPONSE.lower():
                 continue  # skip ranking this candidate
